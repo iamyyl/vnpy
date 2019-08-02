@@ -735,6 +735,7 @@ PYBIND11_MODULE(vnctpmd, m)
 
 	class_<OnMdApi, std::shared_ptr<OnMdApi>> onmdapi(m, "OnMdApi", module_local());
     onmdapi
+		.def(init<>())
 		.def("onFrontConnected", &OnMdApi::onFrontConnected)
 		.def("onFrontDisconnected", &OnMdApi::onFrontDisconnected)
 		.def("onHeartBeatWarning", &OnMdApi::onHeartBeatWarning)
