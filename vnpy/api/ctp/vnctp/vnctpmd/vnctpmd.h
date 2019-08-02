@@ -28,18 +28,52 @@ using namespace pybind11;
 ///-------------------------------------------------------------------------------------
 ///C++ SPI的回调函数方法实现
 ///-------------------------------------------------------------------------------------
+class OnMdApi
+{
+public:
+    //-------------------------------------------------------------------------------------
+    //data：回调函数的数据字典
+    //error：回调函数的错误字典
+    //id：请求id
+    //last：是否为最后返回
+    //i：整数
+    //-------------------------------------------------------------------------------------
+    virtual void onExit();
+
+    virtual void onFrontConnected();
+
+    virtual void onFrontDisconnected(int reqid);
+
+    virtual void onHeartBeatWarning(int reqid);
+
+    virtual void onRspUserLogin(const dict &data, const dict &error, int reqid, bool last);
+
+    virtual void onRspUserLogout(const dict &data, const dict &error, int reqid, bool last);
+
+    virtual void onRspError(const dict &error, int reqid, bool last);
+
+    virtual void onRspSubMarketData(const dict &data, const dict &error, int reqid, bool last);
+
+    virtual void onRspUnSubMarketData(const dict &data, const dict &error, int reqid, bool last);
+
+    virtual void onRspSubForQuoteRsp(const dict &data, const dict &error, int reqid, bool last);
+
+    virtual void onRspUnSubForQuoteRsp(const dict &data, const dict &error, int reqid, bool last);
+
+    virtual void onRtnDepthMarketData(const dict &data);
+
+    virtual void onRtnForQuoteRsp(const dict &data);
+};
 
 //API的继承实现
 class MdApi : public CThostFtdcMdSpi
 {
 private:
 	CThostFtdcMdApi* api;				//API对象
-	thread task_thread;					//工作线程指针（向python中推送数据）
-	TaskQueue task_queue;			    //任务队列
 	bool active = false;				//工作状态
 
 public:
-	MdApi()
+	MdApi() :  onMdApi_(std::make_shared<OnMdApi>())
 	{
 	};
 
@@ -50,6 +84,11 @@ public:
 			this->exit();
 		}
 	};
+    
+    void setOnMdApi(std::shared_ptr<OnMdApi> onMdApi)
+    {
+        onMdApi_ = onMdApi;
+    }
 
 	//-------------------------------------------------------------------------------------
 	//API回调函数
@@ -103,8 +142,6 @@ public:
 	//task：任务
 	//-------------------------------------------------------------------------------------
 
-	void processTask();
-
 	void processFrontConnected(Task *task);
 
 	void processFrontDisconnected(Task *task);
@@ -128,39 +165,6 @@ public:
 	void processRtnDepthMarketData(Task *task);
 
 	void processRtnForQuoteRsp(Task *task);
-
-
-	//-------------------------------------------------------------------------------------
-	//data：回调函数的数据字典
-	//error：回调函数的错误字典
-	//id：请求id
-	//last：是否为最后返回
-	//i：整数
-	//-------------------------------------------------------------------------------------
-
-	virtual void onFrontConnected() {};
-
-	virtual void onFrontDisconnected(int reqid) {};
-
-	virtual void onHeartBeatWarning(int reqid) {};
-
-	virtual void onRspUserLogin(const dict &data, const dict &error, int reqid, bool last) {};
-
-	virtual void onRspUserLogout(const dict &data, const dict &error, int reqid, bool last) {};
-
-	virtual void onRspError(const dict &error, int reqid, bool last) {};
-
-	virtual void onRspSubMarketData(const dict &data, const dict &error, int reqid, bool last) {};
-
-	virtual void onRspUnSubMarketData(const dict &data, const dict &error, int reqid, bool last) {};
-
-	virtual void onRspSubForQuoteRsp(const dict &data, const dict &error, int reqid, bool last) {};
-
-	virtual void onRspUnSubForQuoteRsp(const dict &data, const dict &error, int reqid, bool last) {};
-
-	virtual void onRtnDepthMarketData(const dict &data) {};
-
-	virtual void onRtnForQuoteRsp(const dict &data) {};
 
 	//-------------------------------------------------------------------------------------
 	//req:主动函数的请求字典
@@ -191,4 +195,7 @@ public:
 	int reqUserLogin(const dict &req, int reqid);
 
 	int reqUserLogout(const dict &req, int reqid);
+protected:
+    std::shared_ptr< OnMdApi> onMdApi_;
 };
+

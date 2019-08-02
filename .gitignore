@@ -30,3 +30,11 @@ dist
 _build
 _static
 _templates
+
+*.pyd
+*.vcxproj
+*.vcxproj.filters
+Debug
+*.ilk
+*.lib
+
